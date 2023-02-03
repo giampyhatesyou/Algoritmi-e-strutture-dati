@@ -16,9 +16,9 @@
 // dove l'arco tra i vertici 0 e 1 ha peso 2 e l'arco tra i vertici 1 e 2 ha peso 3
 
 // scrivere sotto Nome, Cognome e Matricola:
-// NOME: Andrea
-// COGNOME: Giampietro
-// MATRICOLA: S5208458
+// NOME:
+// COGNOME:
+// MATRICOLA:
 
 #include <iostream>
 using namespace std;
