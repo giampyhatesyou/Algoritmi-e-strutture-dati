@@ -176,39 +176,47 @@ bool tree::inserisciFiglioDX(Label questo, Label nome_figlio_dx, Tree& t) {
       avra' come effetto l'inserimento del figlio sinistro nel nodo di etichetta 3
       
 */
+
 void stampaAux(const Tree& t){
-    if(!vuoto(t)){
-        stampaAux(t->sinistro);
-        std::cout << t->label << " ";
-        stampaAux(t->destro);
-    }
+    if(vuoto(t))
+        return;
+    stampaAux(t->sinistro);
+    cout << t->label << " ";
+    stampaAux(t->destro);
 }
 
 // Stampa l'albero usando visita in profondita' simmetrica. Se l'albero e' vuoto stampa 'Albero vuoto'
 void tree::stampaDFS(const Tree& t) {
 	// INSERIRE QUI LA VOSTRA IMPLEMENTAZIONE
-    if(vuoto(t)){
-        std::cout << "Albero vuoto\n";
+    if(vuoto(t))
+        cout << "Albero vuoto\n";
+    else
+        stampaAux(t);
+}
+
+void MaxLabelAux(const Tree& t, Label &max){
+    if(vuoto(t))
         return;
-    }
-    stampaAux(t);
+    if(t->label >= max)
+        max = t->label;
+    MaxLabelAux(t->sinistro, max);
+    MaxLabelAux(t->destro, max);
 }
 
 // Restituisce il massimo tra i valori delle etichette presenti nell'albero. Se l'albero e' vuoto restituisce -1
 int tree::getMaxLabel(const Tree& t) {
 	// INSERIRE QUI LA VOSTRA IMPLEMENTAZIONE
+	Label max = 0;
+	MaxLabelAux(t, max);
+	return max;
+}
+
+void rmvSubTree(Tree& t){ //funzione ausiliaria per deallocare memoria nella funzione seguente
     if(vuoto(t))
-        return -1;
-    int l = t->label;
-
-    if(!vuoto(t->sinistro))
-        if(getMaxLabel(t->sinistro) > l)
-            l = getMaxLabel(t->sinistro);
-
-    if(!vuoto(t->destro))
-        if(getMaxLabel(t->destro) > l)
-            l = getMaxLabel(t->destro);
-    return l;
+        return;
+    rmvSubTree(t->sinistro);
+    rmvSubTree(t->destro);
+    delete t;
 }
 
 // Inserisce un nodo con etichetta 'nome_figlio_sx' come figlio sinistro del nodo che ha etichetta massima nell'albero e in questo caso restituisce true. Se l'albero e' vuoto restituisce false
@@ -216,7 +224,16 @@ bool tree::inserisciFiglioSXMax(Label nome_figlio_sx, Tree& t) {
     // INSERIRE QUI LA VOSTRA IMPLEMENTAZIONE
     if(vuoto(t))
         return false;
-    getNode(getMaxLabel(t), t)->sinistro->label = nome_figlio_sx;
+    Nodo* max = getNode(getMaxLabel(t), t); //nodo a cui devo inserire figlio
+    Nodo* aux = new Nodo;
+    aux->label = nome_figlio_sx; //creo nodo da inserire
+    
+    //Eventuale deallocazione di figli
+    if(!vuoto(max->sinistro))
+        rmvSubTree(max->sinistro);
+    
+    //inserimento nuovo nodo
+    max->sinistro = aux;
     return true;
 }
 
