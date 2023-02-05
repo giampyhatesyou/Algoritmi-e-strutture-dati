@@ -121,19 +121,36 @@ void inizializzaBattagliaAerea(BattagliaAerea& gioco) {
         }
     }
 }
-//funzione ausiliaria che mi permette di veroficare se una cella ha diagonali libere
-bool is_ok(BattagliaAerea& gioco, Coordinate pos) {
-    if((pos.x)+1 ) 
+
+
+bool is_ok(BattagliaAerea& gioco, Coordinate pos){ //funzione che controlla se le coordinate sono valide per il limite delle diagonali
+    int counter = 0;
+    for(int i=-1; i<=1; i++) {
+        for(int j=-1; j<=1; j++) { //for fungono da offset per controllare le celle adiacenti
+            for(int k=-1; k<=1; k++) { //intervallo [-1,1] per questione adiacenza
+                if(pos.x+i >= 0 && pos.x+i < larghezza && pos.y+j >= 0 && pos.y+j < lunghezza && pos.z+k >= 0 && pos.z+k < altezza) {
+                    if(gioco.mappa[pos.x+i][pos.y+j][pos.z+k] == cellaPiena) {
+                        counter++;
+                    }
+                }
+            }
+        }
+    } 
+    return(counter < 2); //1 può essere un caso, 2 è un tetntativo di aereo di diagonale
 }
 
 // Crea un aereo (un pezzo alla volta) nelle coordinate indicate. La funzione ritorna True, se tale inserimento avviene con successo (la cella era vuota), False, altrimenti.
 // Gli aerei si possono allungare su un'unica dimensione (X, Y, o Z). Intuitivamente, gli aerei sono delle rette parallele all'asse X, Y, o Z.
 // Non consideriamo aerei che si allungano su più assi contemporaneamente (non sono ne rettangoli, ne cubi).
 bool creaAereo(BattagliaAerea& gioco, Coordinate pos) {
-    /* DA IMPLEMENTARE */
-    if(gioco.mappa[pos.x][pos.y][pos.z] == cellaVuota){
-        gioco.mappa[pos.x][pos.y][pos.z] = cellaPiena; //creo
-        return true;
+    if(pos.x < 0 || pos.x >= larghezza || pos.y < 0 || pos.y >= lunghezza || pos.z < 0 || pos.z >= altezza) {
+        return false;
+    } // controllo che le coordinate siano valide
+    if(gioco.mappa[pos.x][pos.y][pos.z] == cellaVuota) {
+        if(is_ok(gioco, pos)) {
+            gioco.mappa[pos.x][pos.y][pos.z] = cellaPiena;
+            return true;
+        }
     }
     return false;
 }
@@ -148,7 +165,69 @@ bool colpisciPezzoDiAereo(BattagliaAerea& gioco, Coordinate pos) {
     return false;
 }
 
+//FUNZIONI AUSILIARE PER TROVARE AEREI
+void check_X(BattagliaAerea& gioco, Coordinate pos, Lista& lista) {
+    int x = pos.x+1;
+    int y = pos.y;
+    int z = pos.z;
+    while(x < larghezza) {
+        if(gioco.mappa[x][y][z] != cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else
+            break;
+        x++;
+    }
+    x = pos.x - 1;
+    while(x > 0) {
+        if(gioco.mappa[x][y][z]!= cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else
+            break;
+        x--;
+    }
+}
 
+void check_Y(BattagliaAerea& gioco, Coordinate pos, Lista& lista) {
+    int x = pos.x;
+    int y = pos.y+1;
+    int z = pos.z;
+    while(y < lunghezza) {
+        if(gioco.mappa[x][y][z] != cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else        
+            break;
+        y++;
+    }
+    y = pos.y - 1;
+    while(y >= 0) {
+        if(gioco.mappa[x][y][z] != cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else
+            break;
+        y--;
+    }
+}
+
+void check_Z(BattagliaAerea& gioco, Coordinate pos, Lista& lista) {
+    int x = pos.x;
+    int y = pos.y;
+    int z = pos.z+1;
+    while(z <= altezza) {
+        if(gioco.mappa[x][y][z] != cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else
+            break;
+        z++;
+    }
+    z = pos.z - 1;
+    while(z >= 0) {
+        if(gioco.mappa[x][y][z] != cellaVuota)
+            aggiungiElemento(lista, {x, y, z});
+        else
+            break;
+        z--;
+    }
+}
 
 // Funzione che ritorna una lista contenente le parti di un aereo. Le coordinate pos passate alla funzione possono indicare una qualsiasi componente dell'aereo.
 // La lista ritornata contiene le coordinate delle parti dell'aereo (usate struttura dati lista ausiliaria).
@@ -161,75 +240,18 @@ bool colpisciPezzoDiAereo(BattagliaAerea& gioco, Coordinate pos) {
 // anche nel caso venisse passato in input coordinate (3,3,1) o (3,3,2). Questa funzione e' utilizzata per recuperare le parti di un aereo, partendo da una qualsiasi sua parte.
 Lista partiAereoIn(BattagliaAerea& gioco, Coordinate pos) {
     /* DA IMPLEMENTARE */
-    Lista lista = listaVuota;
-    int x = pos.x;
-    int y = pos.y;
-    int z = pos.z;
-    if(gioco.mappa[x][y][z] == cellaPiena){
-        aggiungiElemento(lista, pos);
-        
-        //caso x++
-        if(gioco.mappa[x+1][y][z] == cellaPiena){
-            aggiungiElemento(lista, {x+1, y, z});
-            if(gioco.mappa[x+2][y][z] == cellaPiena){
-                aggiungiElemento(lista, {x+2, y, z});
-                if(gioco.mappa[x+3][y][z] == cellaPiena){
-                    aggiungiElemento(lista, {x+3, y, z});
-                }
-            }
-        }
-        //caso x--
-        if(gioco.mappa[x-1][y][z] == cellaPiena){
-            aggiungiElemento(lista, {x-1, y, z});
-            if(gioco.mappa[x-2][y][z] == cellaPiena){
-                aggiungiElemento(lista, {x-2, y, z});
-                if(gioco.mappa[x-3][y][z] == cellaPiena){
-                    aggiungiElemento(lista, {x-3, y, z});
-                }
-            }
-        }
-        //caso y++
-        if(gioco.mappa[x][y+1][z] == cellaPiena){
-            aggiungiElemento(lista, {x, y+1, z});
-            if(gioco.mappa[x][y+2][z] == cellaPiena){
-                aggiungiElemento(lista, {x, y+2, z});
-                if(gioco.mappa[x][y+3][z] == cellaPiena){
-                    aggiungiElemento(lista, {x, y+3, z});
-                }
-            }
-        }
-        //caso y--
-        if(gioco.mappa[x][y-1][z] == cellaPiena){
-            aggiungiElemento(lista, {x, y-1, z});
-            if(gioco.mappa[x][y-2][z] == cellaPiena){
-                aggiungiElemento(lista, {x, y-2, z});
-                if(gioco.mappa[x][y-3][z] == cellaPiena){
-                    aggiungiElemento(lista, {x, y-3, z});
-                }
-            }
-        }
-        //caso z++
-        if(gioco.mappa[x][y][z+1] == cellaPiena){
-            aggiungiElemento(lista, {x, y, z+1});
-            if(gioco.mappa[x][y][z+2] == cellaPiena){
-                aggiungiElemento(lista, {x, y, z+2});
-                if(gioco.mappa[x][y][z+3] == cellaPiena){
-                    aggiungiElemento(lista, {x, y, z+3});
-                }
-            }
-        }
-        //caso z--
-        if(gioco.mappa[x][y][z-1] == cellaPiena){
-            aggiungiElemento(lista, {x, y, z-1});
-            if(gioco.mappa[x][y][z-2] == cellaPiena){
-                aggiungiElemento(lista, {x, y, z-2});
-                if(gioco.mappa[x][y][z-3] == cellaPiena){
-                    aggiungiElemento(lista, {x, y, z-3});
-                }
-            }
-        } 
+    Lista l;
+    creaLista(l);
+    if(gioco.mappa[pos.x][pos.y][pos.z] != cellaVuota){
+        aggiungiElemento(l, pos);
+        if(gioco.mappa[pos.x+1][pos.y][pos.z] != cellaVuota || gioco.mappa[pos.x-1][pos.y][pos.z] != cellaVuota) 
+            check_X(gioco, pos, l);
+        else if(gioco.mappa[pos.x][pos.y+1][pos.z] != cellaVuota || gioco.mappa[pos.x][pos.y-1][pos.z] != cellaVuota)
+            check_Y(gioco, pos, l);
+        else if(gioco.mappa[pos.x][pos.y][pos.z+1] != cellaVuota || gioco.mappa[pos.x][pos.y][pos.z-1] != cellaVuota)
+            check_Z(gioco, pos, l);
     }
-    return lista;
+    return l;       
 }
 
 // Funzione che ritorna True, se l'aereo alle coordinate indicate è abbattuto (ovvero, tutte le sue parti sono state colpite), False, altrimenti (quindi ancora in volo, 
@@ -240,6 +262,8 @@ Lista partiAereoIn(BattagliaAerea& gioco, Coordinate pos) {
 bool aereoAbbattutoIn(BattagliaAerea &gioco, Coordinate pos) {
     /* DA IMPLEMENTARE */
     Lista lista = partiAereoIn(gioco, pos); //lista delle parti dell'aereo
+    if(lista == listaVuota) //se non è un aereo
+        return false;
     while(lista != listaVuota){ //scorro la lista
         if(gioco.mappa[lista->pos.x][lista->pos.y][lista->pos.z] != cellaColpita){ //se una parte non è stata colpita
             return false;
@@ -329,5 +353,4 @@ int main() {
 
     cout << endl << "La tua funzione e' corretta se sopra ha stampato" << endl;
     cout << "Prima\nAEREO 1 è: In Volo\nAEREO 2 è: In Volo\nAEREO 3 è: In Volo\nDopo\nAEREO 1 è: Abbattuto\nAEREO 2 è: In Volo\nAEREO 3 è: In Volo" << endl;
-
 }
