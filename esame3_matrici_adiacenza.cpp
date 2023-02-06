@@ -128,6 +128,9 @@ void printGrafo(Grafo grafo) {
 // Tale contatto diretto e' rappresentato dalla variabile durata_contatto
 void registraContatto(Grafo& grafo, int id_persona1, int id_persona2, Tempo durata_contatto) {
     // DA IMPLEMENTARE
+    if(id_persona1 < 0 || id_persona1 >= grafo.n_persone || id_persona2 < 0 || id_persona2 >= grafo.n_persone) {
+        return; //se id_persona non appartiene al grafo, ovvero non appartiene al range [0, grafo.n_persone-1]
+    }
     grafo.contatti[id_persona1][id_persona2] = durata_contatto;
     grafo.contatti[id_persona2][id_persona1] = durata_contatto;
 }
@@ -137,13 +140,15 @@ void registraContatto(Grafo& grafo, int id_persona1, int id_persona2, Tempo dura
 // Usare le operazioni della lista fornita
 Lista possibiliInfettiContattoDiretto(Grafo grafo, int id_infetto) {
     // DA IMPLEMENTARE
-    Lista infetti = lista_vuota;
-    for(int i=0; i<grafo.n_persone; ++i){
-        if(grafo.contatti[id_infetto][i] >= 3 && grafo.contatti[i][id_infetto] >= 3){
-            aggiungiElemento(infetti, i);
+    Lista list = lista_vuota;
+    if(id_infetto >= 0 && id_infetto < grafo.n_persone) { //se id_infetto appartiene al grafo, ovvero appartiene al range [0, grafo.n_persone-1]
+        for(int i = 0; i < grafo.n_persone; i++) {
+            if(grafo.contatti[id_infetto][i] >= 3) {
+                aggiungiElemento(list, i);
+            }
         }
     }
-    return infetti;
+    return list;
 }
 
 // funzione che controlla se la catena di infezioni data in input è corretta (ovvero è una sequenza di persone che possono infettarsi fra loro)
@@ -152,55 +157,52 @@ Lista possibiliInfettiContattoDiretto(Grafo grafo, int id_infetto) {
 // e se 3 ha avuto contatto con 4 per almeno 3 minuti. Intuitivamente, questa catena rappresenta una sequenza di infezioni assumendo che la prima persona sia infetta.
 bool catenaDiInfezioni(Grafo grafo, Lista catena) {
     // DA IMPLEMENTARE
-    if(catena == lista_vuota)
-        return false;
-    while(catena->prossimo != lista_vuota){
-        if(grafo.contatti[catena->id][catena->prossimo->id] < 3)
-            return false; //caso che interromperebbe la streak di concatenazioni corrette
-        catena = catena->prossimo;
-    } //se non sono stato interrotto è tutto corretto e posso ritornoare true
+    if(catena != lista_vuota){
+        while(catena->prossimo != lista_vuota) {
+            if(grafo.contatti[catena->id][catena->prossimo->id] < 3) {
+                return false;
+            }
+            catena = catena->prossimo;
+        }
+    } //se la lista è vuota, assumo che la catena sia corretta
     return true;
 }
 
-//FUNZIONI AUSILIARI PER L'ULTIMA FUNZIONE
-bool is_in(Lista l1, int id){
-    while (l1 != lista_vuota){
-        if(l1->id == id)
-            return true; //posso interrompermi perchè so che è presente
-        l1 = l1->prossimo; //avanzo
+//funzione ausliaire che mi dice se un elemento è contenuto in una lista, per evitare inserimenti ripetuti
+bool contieneElemento(Lista list, int elemento) {
+    while(list != lista_vuota) {
+        if(list->id == elemento) {
+            return true;
+        }
+        list = list->prossimo;
     }
-    return false; //se non sono stato interrotto vuol dire che non era presente
+    return false;
 }
 
-Lista mix(Lista l1, Lista l2){ //funzione ausiliare che fonde due liste senza duplicare elementi
-    //scorro l2
-    while(l2 != lista_vuota){
-        if(!is_in(l1, l2->id))  //se l2->id non è già in l1
-            aggiungiElemento(l1, l2->id); //inserisco
-        l2 = l2->prossimo; //avanzo
+void PossibiliInfettiAux(Grafo grafo, int id_infetto, Lista& list) { //funzione ausiliaria che mi aggiunge a list gli infetti diretti di id_infetto
+    for(int i = 0; i < grafo.n_persone; i++) {
+        if(grafo.contatti[id_infetto][i] >= 3 && !contieneElemento(list, i)) {
+            aggiungiElemento(list, i);
+        }
     }
-    return l1;
 }
 
 // funzione che ritorna una lista contenente tutte le persone infettabili (direttamete e indirettamente) da id_infetto (la lista ritornata non deve contenere id_infetto)
 // questa lista rappresenta una possibile catena di infezioni a partire dalla persona id_infetto
 Lista possibiliInfetti(Grafo grafo, int id_infetto) {
     // DA IMPLEMENTARE
-    Lista infetti = new Cella;
-    //inserisco id_infetto nella prima cella in modo da non inserirla nuovamente grazie ai miei controlli
-    //e rimuoverlo più facilmente successivamente
-    infetti->id = id_infetto;
-    for(int i=0; i<grafo.n_persone; ++i){
-        if(grafo.contatti[id_infetto][i] >= 3){ //possibile infetto
-            //aggiungo tutti i contatti diretti di i
-            Lista aux = possibiliInfettiContattoDiretto(grafo, i); //prendo tutti gli elementi possibili di i
-            infetti = mix(infetti, aux); 
-        } //altrimenti non faccio niente
-    }//rumuovo id_infetto
-    Lista aux = infetti;
-    infetti = infetti->prossimo;
-    delete aux; //deallocazione
-    return infetti;
+    Lista list;
+    creaLista(list);
+    if(id_infetto >= 0 && id_infetto < grafo.n_persone) {  
+        aggiungiElemento(list, id_infetto); //aggiungo id_infetto alla lista per evitare che venga aggiunto in posizione più scomode per rimuoverlo
+        for(int i = 0; i < grafo.n_persone; i++) {
+            if(grafo.contatti[id_infetto][i] >= 3) {
+                PossibiliInfettiAux(grafo, i, list);
+            }
+        }
+        rimuoviElemento(list); //rimuovo id_infetto dalla lista
+    }
+    return list;
 }
 
 /****************************************************************/
