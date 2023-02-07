@@ -112,49 +112,37 @@ Tree tree::creaAlberoVuoto() {
 
 // Restituisce true se l'albero t e' vuoto (oppure se il puntatore punta a NULL), false altrimenti
 bool tree::vuoto(const Tree& t) {
-   return (t==alberoVuoto);
+    return t == alberoVuoto;
 }
 
 // Aggiunge il nodo radice, fallisce se l'albero e' non vuoto o se l'etichetta e` minore di zero
 bool tree::inserisciRadice(const Label l, Tree& t) {
-    if(l<0 || !vuoto(t)) 
+    if (l < 0 || !vuoto(t))
         return false;
-
-    Tree aux = new Nodo;
-    aux->label = l;
-    t = aux;
+    t = createNode(l);
     return true;
 }
 
 // Aggiunge nuovo nodo sinistro di un nodo esistente
 // Ritorna false se non esiste il nodo "questo" nell'albero, se la label "nome_figlio_sx" e' gia' presente nell'albero o se e` minore di zero
 bool tree::inserisciFiglioSX(Label questo, Label nome_figlio_sx, Tree& t) {
-    Tree from = getNode(questo, t);
-    if(vuoto(from))
+    if (nome_figlio_sx < 0 || vuoto(t) || !vuoto(getNode(nome_figlio_sx, t)) || vuoto(getNode(questo, t)))
         return false;
-    
-    if(!vuoto(getNode(nome_figlio_sx, t)) || nome_figlio_sx<0)
-        return false;
-    //ora che ho fatto tutti i controlli di dovere, inserisco il figlio
-    Tree aux = new Nodo;
-    aux->label = nome_figlio_sx;
-    from->sinistro = aux;
+    //creazione del nuovo nodo
+    Nodo* sx = createNode(nome_figlio_sx);
+    Nodo* f = getNode(questo, t); //puntatore al nodo "questo"
+    f->sinistro = sx;
     return true;
 }
-
 // Aggiunge nuovo nodo destro di un nodo esistente
 // Ritorna false se non esiste il nodo "questo" nell'albero, se la label "nome_figlio_dx" e' gia' presente nell'albero o se e` minore di zero
 bool tree::inserisciFiglioDX(Label questo, Label nome_figlio_dx, Tree& t) {
-    Tree from = getNode(questo, t);
-    if(vuoto(from))
+    if (nome_figlio_dx < 0 || vuoto(t) || !vuoto(getNode(nome_figlio_dx, t)) || vuoto(getNode(questo, t)))
         return false;
-    
-    if(!vuoto(getNode(nome_figlio_dx, t)) || nome_figlio_dx<0)
-        return false;
-    //ora che ho fatto tutti i controlli di dovere, inserisco il figlio
-    Tree aux = new Nodo;
-    aux->label = nome_figlio_dx;
-    from->destro = aux;
+    //creazione del nuovo nodo
+    Nodo* dx = createNode(nome_figlio_dx);
+    Nodo* f = getNode(questo, t); //puntatore al nodo "questo"
+    f->destro = dx;
     return true;
 }
 
@@ -169,60 +157,30 @@ int tree::getNumPari(const Tree& t) {
 
 // Restituisce l'etichetta del padre del nodo con etichetta "questo" se il nodo esiste nell'albero (o sottoalbero) t e se il padre esiste. Restituisce la costante emptyLabel altrimenti
 Label tree::trovaPadre(Label questo, const Tree& t) {
-    /*if(vuoto(t)) return emptyLabel;
-    //controllo se è il padre
-    if(!vuoto(t->sinistro)){ //evito segm fault
-       if(t->sinistro->label == questo) return t->label;  
-    }
-    if(!vuoto(t->destro)){
-        if(t->destro->label == questo) return t->label;
-    }
-
-    //variabili per chiamate ricorsive
-    if(!vuoto(t->destro) && !vuoto(t->sinistro)){ //se esistono entrambi i figli
-        trovaPadre(questo, t->sinistro);
-        trovaPadre(questo, t->destro);
-    }
-    else if(!vuoto(t->sinistro) && vuoto(t->destro)) //se ho solo figlio sinistro
-        trovaPadre(questo, t->sinistro);
-
-    else if(vuoto(t->sinistro) && !vuoto(t->destro)) //se ho solo figlio destro
-        trovaPadre(questo, t->destro);
+    if(vuoto(t))
+        return emptyLabel;
+    if(!vuoto(t->sinistro) && t->sinistro->label == questo)
+        return t->label;
+    if(!vuoto(t->destro) && t->destro->label == questo)
+        return t->label;
+    Label l = trovaPadre(questo, t->sinistro);
+    if(l != emptyLabel)
+        return l;
     else
-        return emptyLabel;*/
-   
-   
-    //MODO PIU' CARINO?
-
-    if(vuoto(t)) return emptyLabel;
-    Label aux = emptyLabel;
-    if(!vuoto(t->sinistro)){
-        if(t->sinistro->label == questo) return t->label;
-        else   
-            aux = trovaPadre(questo, t->sinistro);
-    }
-    if(aux != emptyLabel) return aux;
-    
-    if(!vuoto(t->destro)){
-        if(t->destro->label == questo) return t->label;
-        else
-            aux = trovaPadre(questo, t->destro);
-    }
-    return aux;
+        return trovaPadre(questo, t->destro);
 }
-
 
 
 // Restituisce la somma dei valori associati ai nodi che si trovano a profondita' maggiore o uguale a k. 
 // Se non esistono nodi a profondita' maggiore o uguale a k, oppure in caso di albero vuoto, l'algoritmo deve restituire 0. 
 // Ricordiamo che la radice si trova a profondita' zero.
 int tree::sommaProfondita(int k, const Tree& t) {
-    int somma = 0;
-    if(vuoto(t)) return 0;
-    if(k<=0){ //faccio le operazioni, altrimenti richiamo scendendo di un livello
-        somma+=t->label;
-    }
-    return(somma+sommaProfondita(k-1, t->sinistro) + sommaProfondita(k-1, t->destro));
+    if(vuoto(t))
+        return 0;
+    if(k <= 0) //sono al livello k o inferiore
+        return sommaProfondita(k-1, t->sinistro) + sommaProfondita(k-1, t->destro) + t->label; //t->label va incluso
+    else 
+        return sommaProfondita(k-1, t->sinistro) + sommaProfondita(k-1, t->destro); //continuo a scendere //senza includere il livello corrente
 }
 
 int main() {
